@@ -33,6 +33,13 @@ async function run() {
 
 const menusCollection = client.db('BristoBossDB').collection('menus');
 const cartsCollection = client.db('BristoBossDB').collection('carts');
+const usersCollection = client.db('BristoBossDB').collection('users');
+
+
+// get users 
+app.get('/users', async(req,res)=>{
+  res.send(await usersCollection.find().toArray())
+})
 // get menus 
 app.get('/menus', async(req, res)=>{
     res.send(await menusCollection.find().toArray())
@@ -51,11 +58,46 @@ app.post('/carts', async(req, res)=>{
   res.send( await cartsCollection.insertOne(cart))
 })
 
+
+
+// add user in the database 
+
+app.post('/users', async(req,res)=>{
+  const user = req.body;
+  const query = {email: user.email}
+  const existingUser = await usersCollection.findOne(query)
+  if(existingUser){
+    return res.send({message: 'user alreay have', insertId: null})
+  }
+  res.send(await usersCollection.insertOne(user))
+})
+
 // cart deelte 
 app.delete('/carts/:id', async(req, res)=>{
   const id = req.params.id;
   const find = {_id: new ObjectId(id)}
   res.send(await cartsCollection.deleteOne(find))
+})
+
+// update user role 
+app.patch('/users/admin/:id', async(req,res)=>{
+  const id = req.params.id;
+  const filter = {_id: new ObjectId(id)}
+  const updateDoc = {
+    $set: {
+      role : 'admin'
+    },
+  };
+  const result = await usersCollection.updateOne(filter, updateDoc)
+  res.send(result)
+  console.log(result)
+})
+
+app.delete('/users/:id', async(req,res)=>{
+  const id = req.params.id
+  const userDelete = {_id: new ObjectId(id)}
+  res.send(await usersCollection.deleteOne(userDelete))
+
 })
 
   } finally {
