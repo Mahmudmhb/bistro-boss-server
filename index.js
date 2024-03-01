@@ -59,11 +59,34 @@ return res.status(401).send({message: 'forbidden access'})
     if(err) {
       return res.status(401).send({message: 'forbidden access'});
     }
-    res.decoded = decoded;
+    req.decoded = decoded;
     next()
   })
 }
 // get users 
+
+app.get('/users/admin/:email', veryFiyToken, async(req,res) =>{
+  const email = req.params.email;
+  // console.log('this is email',email)
+
+  if(email !==req.decoded.email)
+  if(email !== req.decoded.email){
+    return res.status(403).send({message: 'unathorized access'})
+  }  
+  const query = {email: email};
+  // console.log(query)
+  const user = await usersCollection.findOne(query);
+  // console.log('user',user.role)
+  let admin = false;
+  if(user){
+    admin = user?.role === 'admin';
+
+  }
+  res.send(admin)
+  // console.log(admin)
+})
+
+
 app.get('/users', veryFiyToken, async(req,res)=>{
 
   // console.log(req.headers)
