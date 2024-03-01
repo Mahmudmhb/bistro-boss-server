@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
 const app = express();
+const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 5000;
 app.use(cors());
@@ -35,6 +36,17 @@ const menusCollection = client.db('BristoBossDB').collection('menus');
 const cartsCollection = client.db('BristoBossDB').collection('carts');
 const usersCollection = client.db('BristoBossDB').collection('users');
 
+
+// jwt oparation 
+// jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' }, function(err, token) {
+//   console.log(token);
+// });
+
+app.post('/jwt', async(req, res) =>{
+  const user = req.body;
+  const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' }) 
+res.send({token})
+})
 
 // get users 
 app.get('/users', async(req,res)=>{
