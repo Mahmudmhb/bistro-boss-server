@@ -48,8 +48,26 @@ app.post('/jwt', async(req, res) =>{
 res.send({token})
 })
 
+
+const veryFiyToken =(req,res, next) =>{
+  console.log('inside veryfiy token', req.headers.authorization)
+  if(!req.headers.authorization){
+return res.status(401).send({message: 'forbidden access'})
+  }
+  const token = req.headers.authorization.split(' ')[1]
+  jwt.verify(token, process.env.SECRET_TOKEN ,(err, decoded) =>{
+    if(err) {
+      return res.status(401).send({message: 'forbidden access'});
+    }
+    res.decoded = decoded;
+    next()
+  })
+}
 // get users 
-app.get('/users', async(req,res)=>{
+app.get('/users', veryFiyToken, async(req,res)=>{
+
+  // console.log(req.headers)
+
   res.send(await usersCollection.find().toArray())
 })
 // get menus 
