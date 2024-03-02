@@ -109,8 +109,14 @@ app.get('/users/admin/:email', veryFiyToken, veryfiyAdmin, async(req,res) =>{
 app.get('/menus', async(req, res)=>{
     res.send(await menusCollection.find().toArray())
 })
+// post items 
+app.post('/menus',veryFiyToken,veryfiyAdmin, async(req,res)=>{
+  const menu = req.body;
+  console.log(menu)
+  res.send(await menusCollection.insertOne(menu))
+})
 
-app.get('/carts', async(req,res) =>{
+app.get('/carts',  async(req,res) =>{
   const email = req.query.email;
   const query = {email: email}
   res.send(await cartsCollection.find(query).toArray(
@@ -143,6 +149,12 @@ app.delete('/carts/:id',  async(req, res)=>{
   const find = {_id: new ObjectId(id)}
   res.send(await cartsCollection.deleteOne(find))
 })
+app.delete('/menus/:id',  async(req, res)=>{
+  const id = req.params.id;
+  const find = {_id: new ObjectId(id)}
+  res.send(await menusCollection.deleteOne(find))
+})
+
 
 // update user role 
 app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
