@@ -123,6 +123,19 @@ app.get('/carts',  async(req,res) =>{
   ))
 })
 
+app.get('/menus/:id', async(req,res) =>{
+  const id = req.params.id;
+  // console.log(id)
+  const find = {_id: id}
+  console.log('find ', find)
+  const result = await menusCollection.findOne(find)
+  // console.log(result)
+  // const query = {_id: new ObjectId(id)}
+  // const result = await menusCollection.findOne(query).toArray();
+  // console.log(result)
+  res.send(result)
+})
+
 // post add to cart 
 app.post('/carts', async(req, res)=>{
   const cart = req.body;
@@ -170,6 +183,13 @@ app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   console.log(result)
 })
 
+// app.patch('/menus/:id',  async(req, res)=>{
+//   const id = req.params.id;
+//   const find = {_id: new ObjectId(id)}
+//   res.send(await menusCollection.deleteOne(find))
+// })
+
+//  delete items 
 app.delete('/users/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   const id = req.params.id
   const userDelete = {_id: new ObjectId(id)}
