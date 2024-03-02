@@ -50,7 +50,7 @@ res.send({token})
 
 
 const veryFiyToken =(req,res, next) =>{
-  console.log('inside veryfiy token', req.headers.authorization)
+  // console.log('inside veryfiy token', req.headers.authorization)
   if(!req.headers.authorization){
 return res.status(401).send({message: 'forbidden access'})
   }
@@ -60,16 +60,33 @@ return res.status(401).send({message: 'forbidden access'})
       return res.status(401).send({message: 'forbidden access'});
     }
     req.decoded = decoded;
-    next()
+    next();
   })
 }
-// get users 
 
-app.get('/users/admin/:email', veryFiyToken, async(req,res) =>{
+// veryfiy admin 
+const veryfiyAdmin = async(req,res, next) =>{
+const email = req.decoded.email;
+const query = {email: email};
+const user = await usersCollection.findOne(query);
+const isAdmin = user?.role === 'admin';
+if(!isAdmin){
+return res.status(403).send({message: 'forbidden access'})
+}
+next()
+}
+// get users 
+app.get('/users', veryFiyToken, veryfiyAdmin, async(req,res)=>{
+
+  // console.log(req.headers)
+
+  res.send(await usersCollection.find().toArray())
+})
+app.get('/users/admin/:email', veryFiyToken, veryfiyAdmin, async(req,res) =>{
   const email = req.params.email;
   // console.log('this is email',email)
 
-  if(email !==req.decoded.email)
+  // if(email !== req.decoded.email)
   if(email !== req.decoded.email){
     return res.status(403).send({message: 'unathorized access'})
   }  
@@ -82,17 +99,12 @@ app.get('/users/admin/:email', veryFiyToken, async(req,res) =>{
     admin = user?.role === 'admin';
 
   }
-  res.send(admin)
+  res.send({admin})
   // console.log(admin)
 })
 
 
-app.get('/users', veryFiyToken, async(req,res)=>{
 
-  // console.log(req.headers)
-
-  res.send(await usersCollection.find().toArray())
-})
 // get menus 
 app.get('/menus', async(req, res)=>{
     res.send(await menusCollection.find().toArray())
@@ -126,14 +138,14 @@ app.post('/users', async(req,res)=>{
 })
 
 // cart deelte 
-app.delete('/carts/:id', async(req, res)=>{
+app.delete('/carts/:id',  async(req, res)=>{
   const id = req.params.id;
   const find = {_id: new ObjectId(id)}
   res.send(await cartsCollection.deleteOne(find))
 })
 
 // update user role 
-app.patch('/users/admin/:id', async(req,res)=>{
+app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   const id = req.params.id;
   const filter = {_id: new ObjectId(id)}
   const updateDoc = {
@@ -146,7 +158,7 @@ app.patch('/users/admin/:id', async(req,res)=>{
   console.log(result)
 })
 
-app.delete('/users/:id', async(req,res)=>{
+app.delete('/users/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   const id = req.params.id
   const userDelete = {_id: new ObjectId(id)}
   res.send(await usersCollection.deleteOne(userDelete))
