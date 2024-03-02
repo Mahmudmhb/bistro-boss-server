@@ -125,14 +125,9 @@ app.get('/carts',  async(req,res) =>{
 
 app.get('/menus/:id', async(req,res) =>{
   const id = req.params.id;
-  // console.log(id)
-  const find = {_id: id}
-  console.log('find ', find)
+  const find = {_id: new ObjectId(id)}
   const result = await menusCollection.findOne(find)
-  // console.log(result)
-  // const query = {_id: new ObjectId(id)}
-  // const result = await menusCollection.findOne(query).toArray();
-  // console.log(result)
+ 
   res.send(result)
 })
 
@@ -182,6 +177,24 @@ app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   res.send(result)
   console.log(result)
 })
+app.patch('/menus/:id', async(req,res) =>{
+  const id = req.params.id
+  console.log(id)
+  const menu = req.body;
+  console.log(menu)
+  const filter = {_id: new ObjectId(id)}
+  const updateDoc = {
+    $set: {
+      name: menu.name,
+      image: menu.image,
+      price: menu.price,
+      category: menu.category,
+      recipe: menu.recipe,
+    },
+    
+  };
+  const result = await menusCollection.updateOne(filter, updateDoc);
+res.send(result)})
 
 // app.patch('/menus/:id',  async(req, res)=>{
 //   const id = req.params.id;
