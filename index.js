@@ -37,6 +37,7 @@ async function run() {
 const menusCollection = client.db('BristoBossDB').collection('menus');
 const cartsCollection = client.db('BristoBossDB').collection('carts');
 const usersCollection = client.db('BristoBossDB').collection('users');
+const paymentCollection = client.db('BristoBossDB').collection('payments');
 
 
 // jwt oparation 
@@ -179,9 +180,28 @@ app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   res.send(result)
   console.log(result)
 })
+
+
+
+app.post('/payments', async(req, res)=>{
+  const payment = req.body;
+  const result = await paymentCollection.insertOne(payment)
+  // const cartIds = payment.cartIds.map(id => new ObjectId.toString(id));
+
+  const query = {
+    _id: {
+      $in: payment.cartIds.map(id => new ObjectId.toString(id))
+    }
+  }
+  const deleteItems = await paymentCollection.deleteMany(query)
+  console.log(deleteItems)
+  res.send({result, deleteItems});
+
+})
+
 app.patch('/menus/:id', async(req,res) =>{
   const id = req.params.id
-  console.log(id)
+  // console.log(id)
   const menu = req.body;
   console.log(menu)
   const filter = {_id: new ObjectId(id)}
@@ -198,13 +218,6 @@ app.patch('/menus/:id', async(req,res) =>{
   const result = await menusCollection.updateOne(filter, updateDoc);
 res.send(result)})
 
-// app.patch('/menus/:id',  async(req, res)=>{
-//   const id = req.params.id;
-//   const find = {_id: new ObjectId(id)}
-//   res.send(await menusCollection.deleteOne(find))
-// })
-
-//  delete items 
 app.delete('/users/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   const id = req.params.id
   const userDelete = {_id: new ObjectId(id)}
@@ -221,24 +234,24 @@ app.post('/create-payment-intent', async(req, res)=>{
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amount,
     currency: 'usd',
-    payment_method_types: [
-      "card",
-      
-    ],
-  
+    payment_method_types:
+     ["card", ],
   })
 console.log(paymentIntent)
-
   res.send({clientSecret: paymentIntent.client_secret})
- 
-
 })
 
-// app.post("/create-payment-intent", async (req, res) => {
-//   const { price } = req.body; })
-//   res.send({
-//     clientSecret: paymentIntent.client_secret,
-//   });
+
+
+
+app.post('/payments', async(req, res)=>{
+  const payment = req.body;
+  const result = await paymentCollection.insertOne(payment);
+  res.send(result)
+  const id = {_id: new (id)}
+})
+
+
 
   } finally {
     // Ensures that the client will close when you finish/error
