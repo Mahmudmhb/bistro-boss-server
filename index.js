@@ -4,6 +4,8 @@ require('dotenv').config()
 const app = express();
 const jwt = require('jsonwebtoken')
 
+const stripe = require('stripe')(process.env.SECRET_STRIPE_KEY)
+
 const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json())
@@ -209,6 +211,34 @@ app.delete('/users/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   res.send(await usersCollection.deleteOne(userDelete))
 
 })
+
+
+// payment intrigation 
+
+app.post('/create-payment-intent', async(req, res)=>{
+  const {price} = req.body;
+  const amount = parseInt(price * 100)
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: 'usd',
+    payment_method_types: [
+      "card",
+      
+    ],
+  
+  })
+console.log(paymentIntent)
+
+  res.send({clientSecret: paymentIntent.client_secret})
+ 
+
+})
+
+// app.post("/create-payment-intent", async (req, res) => {
+//   const { price } = req.body; })
+//   res.send({
+//     clientSecret: paymentIntent.client_secret,
+//   });
 
   } finally {
     // Ensures that the client will close when you finish/error
