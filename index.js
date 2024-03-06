@@ -40,11 +40,6 @@ const usersCollection = client.db('BristoBossDB').collection('users');
 const paymentCollection = client.db('BristoBossDB').collection('payments');
 
 
-// jwt oparation 
-// jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' }, function(err, token) {
-//   console.log(token);
-// });
-
 app.post('/jwt', async(req, res) =>{
   const user = req.body;
   const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' }) 
@@ -52,59 +47,97 @@ res.send({token})
 })
 
 
-const veryFiyToken =(req,res, next) =>{
-  // console.log('inside veryfiy token', req.headers.authorization)
-  if(!req.headers.authorization){
-return res.status(401).send({message: 'forbidden access'})
+
+
+
+// jankar vai code 
+
+
+
+const verifyToken = (req, res, next) => {
+  // console.log('inside verify token', req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'unauthorized access' });
   }
-  const token = req.headers.authorization.split(' ')[1]
-  jwt.verify(token, process.env.SECRET_TOKEN ,(err, decoded) =>{
-    if(err) {
-      return res.status(401).send({message: 'forbidden access'});
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' })
     }
     req.decoded = decoded;
     next();
   })
 }
 
-// veryfiy admin 
-const veryfiyAdmin = async(req,res, next) =>{
-const email = req.decoded.email;
-const query = {email: email};
-const user = await usersCollection.findOne(query);
-const isAdmin = user?.role === 'admin';
-if(!isAdmin){
-return res.status(403).send({message: 'forbidden access'})
-}
-next()
-}
-// get users 
-app.get('/users', veryFiyToken, veryfiyAdmin, async(req,res)=>{
-
-  // console.log(req.headers)
-
-  res.send(await usersCollection.find().toArray())
-})
-app.get('/users/admin/:email', veryFiyToken, veryfiyAdmin, async(req,res) =>{
-  const email = req.params.email;
-  // console.log('this is email',email)
-
-  // if(email !== req.decoded.email)
-  if(email !== req.decoded.email){
-    return res.status(403).send({message: 'unathorized access'})
-  }  
-  const query = {email: email};
-  // console.log(query)
+// use verify admin after verifyToken
+const verifyAdmin = async (req, res, next) => {
+  const email = req.decoded.email;
+  const query = { email: email };
   const user = await usersCollection.findOne(query);
-  // console.log('user',user.role)
-  let admin = false;
-  if(user){
-    admin = user?.role === 'admin';
-
+  const isAdmin = user?.role === 'admin';
+  if (!isAdmin) {
+    return res.status(403).send({ message: 'forbidden access' });
   }
-  res.send({admin})
-  // console.log(admin)
+  next();
+}
+
+// users related api
+app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
+  const result = await usersCollection.find().toArray();
+  res.send(result);
+});
+
+app.get('/users/admin/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+
+  if (email !== req.decoded.email) {
+    return res.status(403).send({ message: 'forbidden access' })
+  }
+
+  const query = { email: email };
+  const user = await usersCollection.findOne(query);
+  let admin = false;
+  if (user) {
+    admin = user?.role === 'admin';
+  }
+  res.send({ admin });
 })
+
+// veryfiy admin 
+// const veryfiyAdmin = async(req,res, next) =>{
+// const email = req.decoded.email;
+// const query = {email: email};
+// const user = await usersCollection.findOne(query);
+// const isAdmin = user?.role === 'admin';
+// if(!isAdmin){
+// return res.status(403).send({message: 'forbidden access'})
+// }
+// next()
+// }
+// // get users 
+// app.get('/users', veryFiyToken, veryfiyAdmin, async(req,res)=>{
+//   // console.log(req.headers)
+//   res.send(await usersCollection.find().toArray())
+// })
+// app.get('/users/admin/:email', veryFiyToken, async(req,res) =>{
+//   const email = req.params.email;
+  
+//   if(email !== req.decoded.email)
+//   {
+//     return res.status(403).send({message: 'forbidden access'})
+//   }  
+//   const query = {email: email};
+//   // console.log(query)
+//   const user = await usersCollection.findOne(query);
+//   // console.log('user',user.role)
+//   let admin = false;
+//   if(user){
+//     admin = user?.role === 'admin';
+
+//   }
+//   res.send({admin})
+//   // console.log(admin)
+// })
 
 
 
@@ -113,7 +146,7 @@ app.get('/menus', async(req, res)=>{
     res.send(await menusCollection.find().toArray())
 })
 // post items 
-app.post('/menus',veryFiyToken,veryfiyAdmin, async(req,res)=>{
+app.post('/menus',verifyToken,verifyAdmin, async(req,res)=>{
   const menu = req.body;
   console.log(menu)
   res.send(await menusCollection.insertOne(menu))
@@ -168,7 +201,7 @@ app.delete('/menus/:id',  async(req, res)=>{
 
 
 // update user role 
-app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
+app.patch('/users/admin/:id',verifyToken, verifyAdmin, async(req,res)=>{
   const id = req.params.id;
   const filter = {_id: new ObjectId(id)}
   const updateDoc = {
@@ -178,7 +211,7 @@ app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
   };
   const result = await usersCollection.updateOne(filter, updateDoc)
   res.send(result)
-  console.log(result)
+  // console.log(result)
 })
 
 
@@ -186,16 +219,8 @@ app.patch('/users/admin/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
 app.post('/payments', async(req, res)=>{
   const payment = req.body;
   const result = await paymentCollection.insertOne(payment)
-  // const cartIds = payment.cartIds.map(id => new ObjectId.toString(id));
-
-  const query = {
-    _id: {
-      $in: payment.cartIds.map(id => new ObjectId.toString(id))
-    }
-  }
-  const deleteItems = await paymentCollection.deleteMany(query)
-  console.log(deleteItems)
-  res.send({result, deleteItems});
+  res.send(result)
+  
 
 })
 
@@ -218,7 +243,7 @@ app.patch('/menus/:id', async(req,res) =>{
   const result = await menusCollection.updateOne(filter, updateDoc);
 res.send(result)})
 
-app.delete('/users/:id', veryFiyToken, veryfiyAdmin, async(req,res)=>{
+app.delete('/users/:id', verifyToken,verifyAdmin, async(req,res)=>{
   const id = req.params.id
   const userDelete = {_id: new ObjectId(id)}
   res.send(await usersCollection.deleteOne(userDelete))
@@ -235,9 +260,9 @@ app.post('/create-payment-intent', async(req, res)=>{
     amount: amount,
     currency: 'usd',
     payment_method_types:
-     ["card", ],
+     ["card"],
   })
-console.log(paymentIntent)
+// console.log(paymentIntent)
   res.send({clientSecret: paymentIntent.client_secret})
 })
 
@@ -248,7 +273,8 @@ app.post('/payments', async(req, res)=>{
   const payment = req.body;
   const result = await paymentCollection.insertOne(payment);
   res.send(result)
-  const id = {_id: new (id)}
+
+  
 })
 
 
